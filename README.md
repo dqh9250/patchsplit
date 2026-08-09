@@ -61,8 +61,9 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-也可以在 GitHub Actions 的 `Release` workflow 里手动运行，输入一个已经存在的
-tag。workflow 会生成这些文件：
+也可以在 GitHub Actions 的 `Release` workflow 里手动运行，选择需要打包的分支或
+提交，并输入 release tag。tag 不存在时会指向本次 workflow 的提交。workflow 会
+生成这些文件：
 
 - `patchsplit-linux-x86_64.tar.gz`
 - `patchsplit-macos-x86_64.tar.gz`

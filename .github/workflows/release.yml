@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Existing tag to create a draft release for"
+        description: "Tag name for the draft release"
         required: true
         type: string
 
@@ -48,8 +48,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -108,5 +106,6 @@ jobs:
         run: |
           gh release create "$RELEASE_TAG" artifacts/* \
             --draft \
+            --target "$GITHUB_SHA" \
             --title "$RELEASE_TAG" \
             --generate-notes
