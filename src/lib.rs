@@ -73,7 +73,7 @@ fn extract_commit(content: &str) -> Option<String> {
 }
 
 fn extract_commit_from_marker(line: &str) -> Option<String> {
-    let line = line.trim_end_matches(['\r', '\n']);
+    let line = line.trim_end_matches(|character| character == '\r' || character == '\n');
     let rest = line.strip_prefix("From ")?;
     let hash = rest.get(..40)?;
     let separator = rest.as_bytes().get(40)?;

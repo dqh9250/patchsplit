@@ -74,7 +74,10 @@ impl Config {
                 "-V" | "--version" => return Err(AppError::Version),
                 "-f" | "--force" => force = true,
                 "-o" | "--out" => {
-                    let value = args.next().ok_or(AppError::MissingOptionValue(arg))?;
+                    let option = arg.as_str().to_string();
+                    let value = args
+                        .next()
+                        .ok_or(AppError::MissingOptionValue(option))?;
                     output_dir = PathBuf::from(value);
                 }
                 value if value.starts_with("--out=") => {
