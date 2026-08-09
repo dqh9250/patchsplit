@@ -1,18 +1,25 @@
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PatchPart {
+    /// One-based position of this patch in the pull request patch stream.
     pub index: usize,
+    /// Commit SHA extracted from the mail-style `From` marker when available.
     pub commit: Option<String>,
+    /// Commit subject with Git's `[PATCH ...]` prefix removed.
     pub subject: String,
+    /// Portable output file name derived from the index and subject.
     pub filename: String,
+    /// Original patch text for this commit.
     pub content: String,
 }
 
+/// Split a GitHub PR patch stream into one part per mail-formatted commit patch.
 pub fn split_patch_by_commit(input: &str) -> Vec<PatchPart> {
     if input.trim().is_empty() {
         return Vec::new();
     }
 
     let mut starts = commit_starts(input);
+    // Some patch sources contain only a raw unified diff, so keep it as one part.
     if starts.is_empty() {
         starts.push(0);
     }
@@ -52,6 +59,7 @@ fn commit_starts(input: &str) -> Vec<usize> {
     let mut offset = 0;
 
     for line in input.split_inclusive('\n') {
+        // GitHub concatenates PR patches as mail patches beginning with `From <sha> ...`.
         if extract_commit_from_marker(line).is_some() {
             starts.push(offset);
         }
@@ -100,6 +108,7 @@ fn extract_subject(content: &str) -> Option<String> {
         }
 
         if reading_subject && (line.starts_with(' ') || line.starts_with('\t')) {
+            // Mail headers can be folded; continuation lines belong to the Subject header.
             if let Some(value) = subject.as_mut() {
                 value.push(' ');
                 value.push_str(line.trim());
@@ -120,6 +129,7 @@ fn extract_subject(content: &str) -> Option<String> {
 fn clean_subject(subject: &str) -> String {
     let mut value = subject.trim();
 
+    // Remove Git-generated `[PATCH ...]` prefixes so filenames use the commit title.
     loop {
         let Some(rest) = value.strip_prefix('[') else {
             break;
@@ -141,6 +151,7 @@ fn slugify(input: &str) -> String {
     let mut slug = String::new();
     let mut pending_separator = false;
 
+    // Keep generated filenames portable across common filesystems and shells.
     for character in input.chars() {
         if character.is_ascii_alphanumeric() {
             if pending_separator && !slug.is_empty() {

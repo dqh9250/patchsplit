@@ -164,6 +164,7 @@ fn parse_pull_request(value: &str) -> Result<u64, AppError> {
 }
 
 fn download_patch(url: &str) -> Result<String, AppError> {
+    // Rust's standard library has no HTTPS client; calling curl keeps this crate dependency-free.
     let output = Command::new("curl")
         .arg("--fail")
         .arg("--location")
@@ -202,6 +203,7 @@ fn write_parts(
         let mut options = OpenOptions::new();
         options.write(true);
 
+        // Refuse overwrites by default so reruns do not replace manually edited patches.
         if force {
             options.create(true).truncate(true);
         } else {
