@@ -50,3 +50,59 @@ cargo build --release
 ```text
 target/release/patchsplit
 ```
+
+## 发版
+
+推送 `v*` tag 会触发 GitHub Actions 打包三个平台的 release 产物，并自动创建
+GitHub draft release：
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+也可以在 GitHub Actions 的 `Release` workflow 里手动运行，输入一个已经存在的
+tag。workflow 会生成这些文件：
+
+- `patchsplit-linux-x86_64.tar.gz`
+- `patchsplit-macos-x86_64.tar.gz`
+- `patchsplit-windows-x86_64.zip`
+
+release 默认是草稿，需要在 GitHub Releases 页面检查后手动发布。
+
+## 安装
+
+### Linux
+
+```sh
+tar -xzf patchsplit-linux-x86_64.tar.gz
+chmod +x patchsplit
+sudo install -m 755 patchsplit /usr/local/bin/patchsplit
+patchsplit --version
+```
+
+### macOS
+
+```sh
+tar -xzf patchsplit-macos-x86_64.tar.gz
+chmod +x patchsplit
+sudo install -m 755 patchsplit /usr/local/bin/patchsplit
+patchsplit --version
+```
+
+如果 macOS 阻止运行从浏览器下载的二进制，可以移除 quarantine 属性：
+
+```sh
+xattr -d com.apple.quarantine /usr/local/bin/patchsplit
+```
+
+### Windows
+
+在 PowerShell 中解压：
+
+```powershell
+Expand-Archive .\patchsplit-windows-x86_64.zip -DestinationPath .\patchsplit
+.\patchsplit\patchsplit.exe --version
+```
+
+需要全局使用时，把解压后的 `patchsplit` 目录加入用户 `Path` 环境变量。
