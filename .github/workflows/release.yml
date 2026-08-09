@@ -103,8 +103,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
         run: |
           gh release create "$RELEASE_TAG" artifacts/* \
+            --repo "$RELEASE_REPOSITORY" \
             --draft \
             --target "$GITHUB_SHA" \
             --title "$RELEASE_TAG" \
