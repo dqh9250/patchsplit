@@ -4,19 +4,33 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+mod i18n;
+
+use i18n::{tr, tr_args};
 use patchsplit::{split_patch_by_commit, PatchPart};
 
 fn main() {
+    i18n::init();
+
     match run() {
         Ok(()) => {}
         Err(AppError::Help) => {
             println!("{}", usage());
         }
         Err(AppError::Version) => {
-            println!("patchsplit {}", patchsplit::version());
+            println!(
+                "{}",
+                tr_args(
+                    "patchsplit {version}",
+                    &[("version", patchsplit::version().to_string())]
+                )
+            );
         }
         Err(error) => {
-            eprintln!("error: {error}");
+            eprintln!(
+                "{}",
+                tr_args("error: {message}", &[("message", error.to_string())])
+            );
             eprintln!();
             eprintln!("{}", usage());
             std::process::exit(error.exit_code());
@@ -36,11 +50,16 @@ fn run() -> Result<(), AppError> {
 
     let written = write_parts(&parts, &config.output_dir, config.force)?;
 
-    println!("downloaded {url}");
+    println!("{}", tr_args("downloaded {url}", &[("url", url)]));
     println!(
-        "wrote {} patch file(s) to {}",
-        written.len(),
-        config.output_dir.display()
+        "{}",
+        tr_args(
+            "wrote {count} patch file(s) to {directory}",
+            &[
+                ("count", written.len().to_string()),
+                ("directory", config.output_dir.display().to_string()),
+            ]
+        )
     );
     for path in written {
         println!("{}", path.display());
@@ -271,70 +290,102 @@ impl AppError {
 
 impl std::fmt::Display for AppError {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Help | Self::Version => Ok(()),
-            Self::InvalidArguments => write!(
-                formatter,
-                "expected a GitHub repository and pull request number"
-            ),
-            Self::InvalidRepoSpec(value) => {
-                write!(formatter, "repository must use owner/repo form, got {value:?}")
-            }
-            Self::InvalidRepoSegment { kind, value } => {
-                write!(formatter, "invalid GitHub repository {kind}: {value:?}")
-            }
-            Self::InvalidPullRequest(value) => {
-                write!(formatter, "pull request number must be a positive integer, got {value:?}")
-            }
-            Self::MissingOptionValue(option) => write!(formatter, "missing value for {option}"),
-            Self::UnknownOption(option) => write!(formatter, "unknown option {option}"),
-            Self::DownloadCommand(source) if source.kind() == std::io::ErrorKind::NotFound => {
-                write!(formatter, "curl was not found in PATH")
-            }
-            Self::DownloadCommand(source) => write!(formatter, "failed to run curl: {source}"),
-            Self::DownloadFailed { status, message } => match (status, message.is_empty()) {
-                (Some(code), false) => {
-                    write!(formatter, "download failed with status {code}: {message}")
-                }
-                (Some(code), true) => write!(formatter, "download failed with status {code}"),
-                (None, false) => write!(formatter, "download failed: {message}"),
-                (None, true) => write!(formatter, "download failed"),
-            },
-            Self::PatchNotUtf8(_) => write!(formatter, "downloaded patch is not valid UTF-8"),
-            Self::EmptyPatch => write!(formatter, "downloaded patch is empty"),
-            Self::CreateOutputDir { path, source } => {
-                write!(formatter, "failed to create output directory {}: {source}", path.display())
-            }
-            Self::WritePatch { path, source }
-                if source.kind() == std::io::ErrorKind::AlreadyExists =>
-            {
-                write!(
-                    formatter,
-                    "refusing to overwrite existing patch file {}; pass --force to replace it",
-                    path.display()
-                )
-            }
-            Self::WritePatch { path, source } => {
-                write!(formatter, "failed to write patch file {}: {source}", path.display())
-            }
-        }
+        formatter.write_str(&self.message())
     }
 }
 
 impl std::error::Error for AppError {}
 
-fn usage() -> &'static str {
-    "Usage:
-  patchsplit <owner/repo> <pr-number> [--out <dir>] [--force]
-  patchsplit <owner> <repo> <pr-number> [--out <dir>] [--force]
+impl AppError {
+    fn message(&self) -> String {
+        match self {
+            Self::Help | Self::Version => String::new(),
+            Self::InvalidArguments => {
+                tr("expected a GitHub repository and pull request number")
+            }
+            Self::InvalidRepoSpec(value) => tr_args(
+                "repository must use owner/repo form, got {value}",
+                &[("value", quoted(value))],
+            ),
+            Self::InvalidRepoSegment { kind, value } => tr_args(
+                "invalid GitHub repository {kind}: {value}",
+                &[("kind", repo_segment_label(kind)), ("value", quoted(value))],
+            ),
+            Self::InvalidPullRequest(value) => tr_args(
+                "pull request number must be a positive integer, got {value}",
+                &[("value", quoted(value))],
+            ),
+            Self::MissingOptionValue(option) => {
+                tr_args("missing value for {option}", &[("option", option.clone())])
+            }
+            Self::UnknownOption(option) => {
+                tr_args("unknown option {option}", &[("option", option.clone())])
+            }
+            Self::DownloadCommand(source) if source.kind() == std::io::ErrorKind::NotFound => {
+                tr("curl was not found in PATH")
+            }
+            Self::DownloadCommand(source) => tr_args(
+                "failed to run curl: {source}",
+                &[("source", source.to_string())],
+            ),
+            Self::DownloadFailed { status, message } => match (status, message.is_empty()) {
+                (Some(code), false) => tr_args(
+                    "download failed with status {status}: {message}",
+                    &[
+                        ("status", code.to_string()),
+                        ("message", message.to_string()),
+                    ],
+                ),
+                (Some(code), true) => tr_args(
+                    "download failed with status {status}",
+                    &[("status", code.to_string())],
+                ),
+                (None, false) => tr_args(
+                    "download failed: {message}",
+                    &[("message", message.to_string())],
+                ),
+                (None, true) => tr("download failed"),
+            },
+            Self::PatchNotUtf8(_) => tr("downloaded patch is not valid UTF-8"),
+            Self::EmptyPatch => tr("downloaded patch is empty"),
+            Self::CreateOutputDir { path, source } => tr_args(
+                "failed to create output directory {path}: {source}",
+                &[
+                    ("path", path.display().to_string()),
+                    ("source", source.to_string()),
+                ],
+            ),
+            Self::WritePatch { path, source }
+                if source.kind() == std::io::ErrorKind::AlreadyExists =>
+            {
+                tr_args(
+                    "refusing to overwrite existing patch file {path}; pass --force to replace it",
+                    &[("path", path.display().to_string())],
+                )
+            }
+            Self::WritePatch { path, source } => tr_args(
+                "failed to write patch file {path}: {source}",
+                &[
+                    ("path", path.display().to_string()),
+                    ("source", source.to_string()),
+                ],
+            ),
+        }
+    }
+}
 
-Options:
-  -o, --out <dir>   Output directory for split patch files [default: patches]
-  -f, --force       Overwrite existing patch files
-  -h, --help        Show this help
-  -V, --version     Show version
+fn quoted(value: &str) -> String {
+    format!("{value:?}")
+}
 
-Examples:
-  patchsplit rust-lang/rust 12345
-  patchsplit openai codex 42 -o pr-42-patches"
+fn repo_segment_label(kind: &str) -> String {
+    match kind {
+        "owner" => tr("owner"),
+        "repo" => tr("repo"),
+        other => other.to_string(),
+    }
+}
+
+fn usage() -> String {
+    tr("Usage:\n  patchsplit <owner/repo> <pr-number> [--out <dir>] [--force]\n  patchsplit <owner> <repo> <pr-number> [--out <dir>] [--force]\n\nOptions:\n  -o, --out <dir>   Output directory for split patch files [default: patches]\n  -f, --force       Overwrite existing patch files\n  -h, --help        Show this help\n  -V, --version     Show version\n\nExamples:\n  patchsplit rust-lang/rust 12345\n  patchsplit openai codex 42 -o pr-42-patches")
 }
