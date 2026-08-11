@@ -40,9 +40,9 @@ them.
 
 ## Dependencies
 
-The current implementation does not use third-party Rust crates. It calls the
-system `curl` command to download GitHub `.patch` files, so `curl` must be
-available in `PATH` at runtime.
+The CLI uses `thiserror` for internal error types. It calls the system `curl`
+command to download GitHub `.patch` files, so `curl` must be available in
+`PATH` at runtime.
 
 ## Localization
 

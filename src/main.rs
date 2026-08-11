@@ -29,7 +29,7 @@ fn main() {
         Err(error) => {
             eprintln!(
                 "{}",
-                tr_args("error: {message}", &[("message", error.to_string())])
+                tr_args("error: {message}", &[("message", error.message())])
             );
             eprintln!();
             eprintln!("{}", usage());
@@ -94,9 +94,7 @@ impl Config {
                 "-f" | "--force" => force = true,
                 "-o" | "--out" => {
                     let option = arg.as_str().to_string();
-                    let value = args
-                        .next()
-                        .ok_or(AppError::MissingOptionValue(option))?;
+                    let value = args.next().ok_or(AppError::MissingOptionValue(option))?;
                     output_dir = PathBuf::from(value);
                 }
                 value if value.starts_with("--out=") => {
@@ -117,7 +115,11 @@ impl Config {
             [owner, repo, pull_request] => {
                 validate_repo_segment("owner", owner)?;
                 validate_repo_segment("repo", repo)?;
-                (owner.clone(), repo.clone(), parse_pull_request(pull_request)?)
+                (
+                    owner.clone(),
+                    repo.clone(),
+                    parse_pull_request(pull_request)?,
+                )
             }
             _ => return Err(AppError::InvalidArguments),
         };
@@ -155,11 +157,9 @@ fn parse_repo_spec(value: &str) -> Result<(String, String), AppError> {
 
 fn validate_repo_segment(kind: &'static str, value: &str) -> Result<(), AppError> {
     if value.is_empty()
-        || value
-            .chars()
-            .any(|character| {
-                character == '/' || character.is_whitespace() || character.is_control()
-            })
+        || value.chars().any(|character| {
+            character == '/' || character.is_whitespace() || character.is_control()
+        })
     {
         return Err(AppError::InvalidRepoSegment {
             kind,
@@ -183,7 +183,7 @@ fn parse_pull_request(value: &str) -> Result<u64, AppError> {
 }
 
 fn download_patch(url: &str) -> Result<String, AppError> {
-    // Rust's standard library has no HTTPS client; calling curl keeps this crate dependency-free.
+    // Rust's standard library has no HTTPS client; calling curl keeps downloads simple.
     let output = Command::new("curl")
         .arg("--fail")
         .arg("--location")
@@ -203,7 +203,7 @@ fn download_patch(url: &str) -> Result<String, AppError> {
         });
     }
 
-    String::from_utf8(output.stdout).map_err(AppError::PatchNotUtf8)
+    Ok(String::from_utf8(output.stdout)?)
 }
 
 fn write_parts(
@@ -244,30 +244,41 @@ fn write_parts(
     Ok(written)
 }
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 enum AppError {
+    #[error("help requested")]
     Help,
+    #[error("version requested")]
     Version,
+    #[error("expected a GitHub repository and pull request number")]
     InvalidArguments,
+    #[error("repository must use owner/repo form, got {0:?}")]
     InvalidRepoSpec(String),
-    InvalidRepoSegment {
-        kind: &'static str,
-        value: String,
-    },
+    #[error("invalid GitHub repository {kind}: {value:?}")]
+    InvalidRepoSegment { kind: &'static str, value: String },
+    #[error("pull request number must be a positive integer, got {0:?}")]
     InvalidPullRequest(String),
+    #[error("missing value for {0}")]
     MissingOptionValue(String),
+    #[error("unknown option {0}")]
     UnknownOption(String),
-    DownloadCommand(std::io::Error),
+    #[error("failed to run curl: {0}")]
+    DownloadCommand(#[source] std::io::Error),
+    #[error("download failed with status {status:?}: {message}")]
     DownloadFailed {
         status: Option<i32>,
         message: String,
     },
-    PatchNotUtf8(std::string::FromUtf8Error),
+    #[error("downloaded patch is not valid UTF-8: {0}")]
+    PatchNotUtf8(#[from] std::string::FromUtf8Error),
+    #[error("downloaded patch is empty")]
     EmptyPatch,
+    #[error("failed to create output directory {path:?}: {source}")]
     CreateOutputDir {
         path: PathBuf,
         source: std::io::Error,
     },
+    #[error("failed to write patch file {path:?}: {source}")]
     WritePatch {
         path: PathBuf,
         source: std::io::Error,
@@ -288,21 +299,11 @@ impl AppError {
     }
 }
 
-impl std::fmt::Display for AppError {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str(&self.message())
-    }
-}
-
-impl std::error::Error for AppError {}
-
 impl AppError {
     fn message(&self) -> String {
         match self {
             Self::Help | Self::Version => String::new(),
-            Self::InvalidArguments => {
-                tr("expected a GitHub repository and pull request number")
-            }
+            Self::InvalidArguments => tr("expected a GitHub repository and pull request number"),
             Self::InvalidRepoSpec(value) => tr_args(
                 "repository must use owner/repo form, got {value}",
                 &[("value", quoted(value))],
@@ -346,7 +347,10 @@ impl AppError {
                 ),
                 (None, true) => tr("download failed"),
             },
-            Self::PatchNotUtf8(_) => tr("downloaded patch is not valid UTF-8"),
+            Self::PatchNotUtf8(source) => tr_args(
+                "downloaded patch is not valid UTF-8: {source}",
+                &[("source", source.to_string())],
+            ),
             Self::EmptyPatch => tr("downloaded patch is empty"),
             Self::CreateOutputDir { path, source } => tr_args(
                 "failed to create output directory {path}: {source}",

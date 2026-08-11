@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: patchsplit 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/zitzhen/patchsplit/issues\n"
-"POT-Creation-Date: 2026-08-10 19:11+0800\n"
+"POT-Creation-Date: 2026-08-11 15:04+0800\n"
 "PO-Revision-Date: 2026-08-10 19:11+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -81,8 +81,8 @@ msgid "download failed"
 msgstr "下载失败"
 
 #: src/main.rs
-msgid "downloaded patch is not valid UTF-8"
-msgstr "下载的 patch 不是有效的 UTF-8 文本"
+msgid "downloaded patch is not valid UTF-8: {source}"
+msgstr "下载的 patch 不是有效的 UTF-8 文本：{source}"
 
 #: src/main.rs
 msgid "downloaded patch is empty"

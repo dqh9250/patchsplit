@@ -38,7 +38,7 @@ patches/
 
 ## 依赖
 
-当前实现不引入第三方 Rust crate。下载 GitHub `.patch` 时会调用系统里的
+CLI 使用 `thiserror` 处理内部错误类型。下载 GitHub `.patch` 时会调用系统里的
 `curl`，因此运行环境需要能在 `PATH` 中找到 `curl`。
 
 ## 本地化
