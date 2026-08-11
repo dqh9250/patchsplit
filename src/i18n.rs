@@ -6,6 +6,8 @@ use std::sync::OnceLock;
 
 const DOMAIN: &str = "patchsplit";
 
+const ZH_CN: &str = include_str!("../po/zh_CN.po");
+
 static CATALOG: OnceLock<Catalog> = OnceLock::new();
 
 pub fn init() {
@@ -30,22 +32,27 @@ struct Catalog {
 }
 
 impl Catalog {
-    fn load() -> Self {
-        for locale in requested_locales() {
-            for path in catalog_paths(&locale) {
-                let Ok(contents) = fs::read_to_string(&path) else {
-                    continue;
-                };
+fn load() -> Self {
+    for locale in requested_locales() {
+        for path in catalog_paths(&locale) {
+            let Ok(contents) = fs::read_to_string(&path) else {
+                continue;
+            };
 
-                return Self {
-                    messages: parse_po(&contents),
-                };
-            }
+            return Self {
+                messages: parse_po(&contents),
+            };
         }
 
-        Self::default()
+        if locale == "zh_CN" {
+            return Self {
+                messages: parse_po(ZH_CN),
+            };
+        }
     }
-
+    Self::default()
+    }
+    
     fn translate<'a>(&'a self, msgid: &'a str) -> &'a str {
         self.messages
             .get(msgid)
