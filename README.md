@@ -40,9 +40,26 @@ them.
 
 ## Dependencies
 
-The current implementation does not use third-party Rust crates. It calls the
-system `curl` command to download GitHub `.patch` files, so `curl` must be
-available in `PATH` at runtime.
+The CLI uses `thiserror` for internal error types. It calls the system `curl`
+command to download GitHub `.patch` files, so `curl` must be available in
+`PATH` at runtime.
+
+## Localization
+
+User-facing CLI text is wired through a PO-based i18n layer. At runtime,
+`patchsplit` picks the first locale from `PATCHSPLIT_LANGUAGE`, `LANGUAGE`,
+`LC_ALL`, `LC_MESSAGES`, or `LANG`, and reads UTF-8 `.po` catalogs from
+`PATCHSPLIT_LOCALEDIR` or installation-relative locations next to the
+executable.
+
+Refresh the translation template with GNU gettext tools:
+
+```sh
+scripts/update-pot.sh
+```
+
+The template is generated at `po/patchsplit.pot`. Source files used for
+extraction are listed in `po/POTFILES.in`.
 
 ## Build
 

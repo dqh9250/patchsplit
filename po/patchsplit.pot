@@ -1,0 +1,129 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the patchsplit package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: patchsplit 0.1.0\n"
+"Report-Msgid-Bugs-To: https://github.com/zitzhen/patchsplit/issues\n"
+"POT-Creation-Date: 2026-08-11 15:04+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/main.rs
+msgid "patchsplit {version}"
+msgstr ""
+
+#: src/main.rs
+msgid "error: {message}"
+msgstr ""
+
+#: src/main.rs
+msgid "downloaded {url}"
+msgstr ""
+
+#: src/main.rs
+msgid "wrote {count} patch file(s) to {directory}"
+msgstr ""
+
+#: src/main.rs
+msgid "expected a GitHub repository and pull request number"
+msgstr ""
+
+#: src/main.rs
+msgid "repository must use owner/repo form, got {value}"
+msgstr ""
+
+#: src/main.rs
+msgid "invalid GitHub repository {kind}: {value}"
+msgstr ""
+
+#: src/main.rs
+msgid "pull request number must be a positive integer, got {value}"
+msgstr ""
+
+#: src/main.rs
+msgid "missing value for {option}"
+msgstr ""
+
+#: src/main.rs
+msgid "unknown option {option}"
+msgstr ""
+
+#: src/main.rs
+msgid "curl was not found in PATH"
+msgstr ""
+
+#: src/main.rs
+msgid "failed to run curl: {source}"
+msgstr ""
+
+#: src/main.rs
+msgid "download failed with status {status}: {message}"
+msgstr ""
+
+#: src/main.rs
+msgid "download failed with status {status}"
+msgstr ""
+
+#: src/main.rs
+msgid "download failed: {message}"
+msgstr ""
+
+#: src/main.rs
+msgid "download failed"
+msgstr ""
+
+#: src/main.rs
+msgid "downloaded patch is not valid UTF-8: {source}"
+msgstr ""
+
+#: src/main.rs
+msgid "downloaded patch is empty"
+msgstr ""
+
+#: src/main.rs
+msgid "failed to create output directory {path}: {source}"
+msgstr ""
+
+#: src/main.rs
+msgid ""
+"refusing to overwrite existing patch file {path}; pass --force to replace it"
+msgstr ""
+
+#: src/main.rs
+msgid "failed to write patch file {path}: {source}"
+msgstr ""
+
+#: src/main.rs
+msgid "owner"
+msgstr ""
+
+#: src/main.rs
+msgid "repo"
+msgstr ""
+
+#: src/main.rs
+msgid ""
+"Usage:\n"
+"  patchsplit <owner/repo> <pr-number> [--out <dir>] [--force]\n"
+"  patchsplit <owner> <repo> <pr-number> [--out <dir>] [--force]\n"
+"\n"
+"Options:\n"
+"  -o, --out <dir>   Output directory for split patch files [default: "
+"patches]\n"
+"  -f, --force       Overwrite existing patch files\n"
+"  -h, --help        Show this help\n"
+"  -V, --version     Show version\n"
+"\n"
+"Examples:\n"
+"  patchsplit rust-lang/rust 12345\n"
+"  patchsplit openai codex 42 -o pr-42-patches"
+msgstr ""

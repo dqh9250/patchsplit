@@ -1,0 +1,141 @@
+# Chinese translations for patchsplit package.
+# Copyright (C) 2026 THE patchsplit'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the patchsplit package.
+# Automatically generated, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: patchsplit 0.1.0\n"
+"Report-Msgid-Bugs-To: https://github.com/zitzhen/patchsplit/issues\n"
+"POT-Creation-Date: 2026-08-11 15:04+0800\n"
+"PO-Revision-Date: 2026-08-10 19:11+0800\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/main.rs
+msgid "patchsplit {version}"
+msgstr "patchsplit {version}"
+
+#: src/main.rs
+msgid "error: {message}"
+msgstr "错误：{message}"
+
+#: src/main.rs
+msgid "downloaded {url}"
+msgstr "已下载 {url}"
+
+#: src/main.rs
+msgid "wrote {count} patch file(s) to {directory}"
+msgstr "已将 {count} 个 patch 文件写入 {directory}"
+
+#: src/main.rs
+msgid "expected a GitHub repository and pull request number"
+msgstr "需要提供 GitHub 仓库和 Pull Request 编号"
+
+#: src/main.rs
+msgid "repository must use owner/repo form, got {value}"
+msgstr "仓库必须使用 owner/repo 格式，实际为 {value}"
+
+#: src/main.rs
+msgid "invalid GitHub repository {kind}: {value}"
+msgstr "无效的 GitHub 仓库{kind}：{value}"
+
+#: src/main.rs
+msgid "pull request number must be a positive integer, got {value}"
+msgstr "Pull Request 编号必须是正整数，实际为 {value}"
+
+#: src/main.rs
+msgid "missing value for {option}"
+msgstr "缺少 {option} 的值"
+
+#: src/main.rs
+msgid "unknown option {option}"
+msgstr "未知选项 {option}"
+
+#: src/main.rs
+msgid "curl was not found in PATH"
+msgstr "PATH 中找不到 curl"
+
+#: src/main.rs
+msgid "failed to run curl: {source}"
+msgstr "运行 curl 失败：{source}"
+
+#: src/main.rs
+msgid "download failed with status {status}: {message}"
+msgstr "下载失败，状态码 {status}：{message}"
+
+#: src/main.rs
+msgid "download failed with status {status}"
+msgstr "下载失败，状态码 {status}"
+
+#: src/main.rs
+msgid "download failed: {message}"
+msgstr "下载失败：{message}"
+
+#: src/main.rs
+msgid "download failed"
+msgstr "下载失败"
+
+#: src/main.rs
+msgid "downloaded patch is not valid UTF-8: {source}"
+msgstr "下载的 patch 不是有效的 UTF-8 文本：{source}"
+
+#: src/main.rs
+msgid "downloaded patch is empty"
+msgstr "下载的 patch 为空"
+
+#: src/main.rs
+msgid "failed to create output directory {path}: {source}"
+msgstr "创建输出目录 {path} 失败：{source}"
+
+#: src/main.rs
+msgid ""
+"refusing to overwrite existing patch file {path}; pass --force to replace it"
+msgstr "拒绝覆盖已存在的 patch 文件 {path}；如需替换，请传入 --force"
+
+#: src/main.rs
+msgid "failed to write patch file {path}: {source}"
+msgstr "写入 patch 文件 {path} 失败：{source}"
+
+#: src/main.rs
+msgid "owner"
+msgstr "所有者"
+
+#: src/main.rs
+msgid "repo"
+msgstr "仓库"
+
+#: src/main.rs
+msgid ""
+"Usage:\n"
+"  patchsplit <owner/repo> <pr-number> [--out <dir>] [--force]\n"
+"  patchsplit <owner> <repo> <pr-number> [--out <dir>] [--force]\n"
+"\n"
+"Options:\n"
+"  -o, --out <dir>   Output directory for split patch files [default: "
+"patches]\n"
+"  -f, --force       Overwrite existing patch files\n"
+"  -h, --help        Show this help\n"
+"  -V, --version     Show version\n"
+"\n"
+"Examples:\n"
+"  patchsplit rust-lang/rust 12345\n"
+"  patchsplit openai codex 42 -o pr-42-patches"
+msgstr ""
+"用法：\n"
+"  patchsplit <owner/repo> <pr-number> [--out <dir>] [--force]\n"
+"  patchsplit <owner> <repo> <pr-number> [--out <dir>] [--force]\n"
+"\n"
+"选项：\n"
+"  -o, --out <dir>   拆分后的 patch 文件输出目录 [默认：patches]\n"
+"  -f, --force       覆盖已有 patch 文件\n"
+"  -h, --help        显示帮助信息\n"
+"  -V, --version     显示版本\n"
+"\n"
+"示例：\n"
+"  patchsplit rust-lang/rust 12345\n"
+"  patchsplit openai codex 42 -o pr-42-patches"

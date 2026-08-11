@@ -38,8 +38,24 @@ patches/
 
 ## 依赖
 
-当前实现不引入第三方 Rust crate。下载 GitHub `.patch` 时会调用系统里的
+CLI 使用 `thiserror` 处理内部错误类型。下载 GitHub `.patch` 时会调用系统里的
 `curl`，因此运行环境需要能在 `PATH` 中找到 `curl`。
+
+## 本地化
+
+CLI 的用户可见文本已经接入基于 PO 的 i18n 层。运行时，`patchsplit` 会从
+`PATCHSPLIT_LANGUAGE`、`LANGUAGE`、`LC_ALL`、`LC_MESSAGES` 或 `LANG` 中选择
+第一个 locale，并从 `PATCHSPLIT_LOCALEDIR` 或可执行文件旁边的安装目录读取
+UTF-8 `.po` catalog。
+
+使用 GNU gettext 工具刷新翻译模板：
+
+```sh
+scripts/update-pot.sh
+```
+
+生成的模板位于 `po/patchsplit.pot`。参与提取的源码文件列在
+`po/POTFILES.in`。
 
 ## 构建
 
