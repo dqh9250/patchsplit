@@ -11,7 +11,6 @@ use patchsplit::{split_patch_by_commit, PatchPart};
 
 fn main() {
     i18n::init();
-    const ZH_CN: &[u8] = include_bytes!("../po/zh_CN.po");
 
     match run() {
         Ok(()) => {}

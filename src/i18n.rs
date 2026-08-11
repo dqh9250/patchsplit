@@ -32,27 +32,27 @@ struct Catalog {
 }
 
 impl Catalog {
-fn load() -> Self {
-    for locale in requested_locales() {
-        for path in catalog_paths(&locale) {
-            let Ok(contents) = fs::read_to_string(&path) else {
-                continue;
-            };
+    fn load() -> Self {
+        for locale in requested_locales() {
+            for path in catalog_paths(&locale) {
+                let Ok(contents) = fs::read_to_string(&path) else {
+                    continue;
+                };
 
-            return Self {
-                messages: parse_po(&contents),
-            };
-        }
+                return Self {
+                    messages: parse_po(&contents),
+                };
+            }
 
-        if locale == "zh_CN" {
-            return Self {
-                messages: parse_po(ZH_CN),
-            };
+            if locale == "zh_CN" {
+                return Self {
+                    messages: parse_po(ZH_CN),
+                };
+            }
         }
+        Self::default()
     }
-    Self::default()
-    }
-    
+
     fn translate<'a>(&'a self, msgid: &'a str) -> &'a str {
         self.messages
             .get(msgid)
@@ -63,22 +63,28 @@ fn load() -> Self {
 }
 
 fn requested_locales() -> Vec<String> {
+    requested_locales_with(locale_env)
+}
+
+fn requested_locales_with<F>(get_locale: F) -> Vec<String>
+where
+    F: Fn(&str) -> Option<String>,
+{
     let mut locales = Vec::new();
 
     for name in ["PATCHSPLIT_LANGUAGE", "LANGUAGE"] {
-        if let Some(value) = locale_env(name) {
+        if let Some(value) = get_locale(name) {
             for locale in value.split(':') {
                 push_locale_variants(locale, &mut locales);
             }
+            return locales;
         }
     }
 
-    if locales.is_empty() {
-        for name in ["LC_ALL", "LC_MESSAGES", "LANG"] {
-            if let Some(value) = locale_env(name) {
-                push_locale_variants(&value, &mut locales);
-                break;
-            }
+    for name in ["LC_ALL", "LC_MESSAGES", "LANG"] {
+        if let Some(value) = get_locale(name) {
+            push_locale_variants(&value, &mut locales);
+            break;
         }
     }
 
@@ -89,7 +95,7 @@ fn locale_env(name: &str) -> Option<String> {
     env::var(name)
         .ok()
         .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty() && value != "C" && value != "POSIX")
+        .filter(|value| !value.is_empty())
 }
 
 fn push_locale_variants(value: &str, locales: &mut Vec<String>) {
@@ -128,11 +134,6 @@ fn catalog_paths(locale: &str) -> Vec<PathBuf> {
         roots.push(PathBuf::from(path));
     }
 
-    if let Ok(current_dir) = env::current_dir() {
-        roots.push(current_dir.join("locale"));
-        roots.push(current_dir.join("po"));
-    }
-
     if let Ok(executable) = env::current_exe() {
         if let Some(executable_dir) = executable.parent() {
             roots.push(executable_dir.join("locale"));
@@ -156,12 +157,30 @@ fn catalog_paths(locale: &str) -> Vec<PathBuf> {
 }
 
 fn interpolate(message: &str, args: &[(&str, String)]) -> String {
-    let mut output = message.to_string();
+    let values: HashMap<&str, &str> = args
+        .iter()
+        .map(|(name, value)| (*name, value.as_str()))
+        .collect();
+    let mut output = String::with_capacity(message.len());
+    let mut rest = message;
 
-    for (name, value) in args {
-        output = output.replace(&format!("{{{name}}}"), value);
+    while let Some(start) = rest.find('{') {
+        output.push_str(&rest[..start]);
+        let after_start = &rest[start + 1..];
+        let Some(end) = after_start.find('}') else {
+            output.push_str(&rest[start..]);
+            return output;
+        };
+        let name = &after_start[..end];
+        if let Some(value) = values.get(name) {
+            output.push_str(value);
+        } else {
+            output.push_str(&rest[start..start + end + 2]);
+        }
+        rest = &after_start[end + 1..];
     }
 
+    output.push_str(rest);
     output
 }
 
@@ -313,7 +332,7 @@ fn parse_po_string(value: &str) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{interpolate, parse_po, push_locale_variants};
+    use super::{interpolate, parse_po, push_locale_variants, requested_locales_with};
 
     #[test]
     fn parses_multiline_po_entries() {
@@ -365,6 +384,30 @@ msgstr "ignored with context"
         );
 
         assert_eq!(message, "wrote 2 patch file(s) to patches");
+    }
+
+    #[test]
+    fn does_not_reprocess_interpolated_values() {
+        let message = interpolate(
+            "{path}: {source}",
+            &[
+                ("path", "/tmp/{source}".to_string()),
+                ("source", "input".to_string()),
+            ],
+        );
+
+        assert_eq!(message, "/tmp/{source}: input");
+    }
+
+    #[test]
+    fn c_locale_stops_before_lower_priority_locales() {
+        let locales = requested_locales_with(|name| match name {
+            "PATCHSPLIT_LANGUAGE" => Some("C".to_string()),
+            "LANG" => Some("zh_CN.UTF-8".to_string()),
+            _ => None,
+        });
+
+        assert!(locales.is_empty());
     }
 
     #[test]

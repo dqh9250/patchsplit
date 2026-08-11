@@ -49,8 +49,8 @@ command to download GitHub `.patch` files, so `curl` must be available in
 User-facing CLI text is wired through a PO-based i18n layer. At runtime,
 `patchsplit` picks the first locale from `PATCHSPLIT_LANGUAGE`, `LANGUAGE`,
 `LC_ALL`, `LC_MESSAGES`, or `LANG`, and reads UTF-8 `.po` catalogs from
-`PATCHSPLIT_LOCALEDIR`, `locale/`, or `po/` under the current directory or next
-to the executable.
+`PATCHSPLIT_LOCALEDIR` or installation-relative locations next to the
+executable.
 
 Refresh the translation template with GNU gettext tools:
 
