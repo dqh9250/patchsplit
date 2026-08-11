@@ -44,9 +44,9 @@ impl Catalog {
                 };
             }
 
-            if locale == "zh_CN" {
+            if let Some(contents) = built_in_catalog(&locale) {
                 return Self {
-                    messages: parse_po(ZH_CN),
+                    messages: parse_po(contents),
                 };
             }
         }
@@ -62,6 +62,13 @@ impl Catalog {
     }
 }
 
+fn built_in_catalog(locale: &str) -> Option<&'static str> {
+    match locale {
+        "zh_CN" | "zh" => Some(ZH_CN),
+        _ => None,
+    }
+}
+
 fn requested_locales() -> Vec<String> {
     requested_locales_with(locale_env)
 }
@@ -74,10 +81,16 @@ where
 
     for name in ["PATCHSPLIT_LANGUAGE", "LANGUAGE"] {
         if let Some(value) = get_locale(name) {
+            if is_default_locale(&value) {
+                return locales;
+            }
+
             for locale in value.split(':') {
                 push_locale_variants(locale, &mut locales);
             }
-            return locales;
+            if !locales.is_empty() {
+                return locales;
+            }
         }
     }
 
@@ -99,19 +112,13 @@ fn locale_env(name: &str) -> Option<String> {
 }
 
 fn push_locale_variants(value: &str, locales: &mut Vec<String>) {
-    let normalized = value
-        .split('.')
-        .next()
-        .unwrap_or(value)
-        .split('@')
-        .next()
-        .unwrap_or(value)
-        .replace('-', "_");
+    let locale = locale_name(value);
 
-    if normalized.is_empty() || normalized == "C" || normalized == "POSIX" {
+    if locale.is_empty() || is_default_locale(locale) {
         return;
     }
 
+    let normalized = normalize_locale(locale);
     push_unique(locales, normalized.clone());
 
     if let Some((language, _region)) = normalized.split_once('_') {
@@ -119,6 +126,32 @@ fn push_locale_variants(value: &str, locales: &mut Vec<String>) {
             push_unique(locales, language.to_string());
         }
     }
+}
+
+fn is_default_locale(value: &str) -> bool {
+    matches!(locale_name(value), "C" | "POSIX")
+}
+
+fn locale_name(value: &str) -> &str {
+    value
+        .split('.')
+        .next()
+        .unwrap_or(value)
+        .split('@')
+        .next()
+        .unwrap_or(value)
+}
+
+fn normalize_locale(value: &str) -> String {
+    let normalized = value.replace('-', "_");
+    let Some((language, rest)) = normalized.split_once('_') else {
+        return normalized.to_ascii_lowercase();
+    };
+
+    let mut locale = language.to_ascii_lowercase();
+    locale.push('_');
+    locale.push_str(&rest.to_ascii_uppercase());
+    locale
 }
 
 fn push_unique(values: &mut Vec<String>, value: String) {
@@ -332,7 +365,9 @@ fn parse_po_string(value: &str) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{interpolate, parse_po, push_locale_variants, requested_locales_with};
+    use super::{
+        built_in_catalog, interpolate, parse_po, push_locale_variants, requested_locales_with,
+    };
 
     #[test]
     fn parses_multiline_po_entries() {
@@ -402,7 +437,7 @@ msgstr "ignored with context"
     #[test]
     fn c_locale_stops_before_lower_priority_locales() {
         let locales = requested_locales_with(|name| match name {
-            "PATCHSPLIT_LANGUAGE" => Some("C".to_string()),
+            "PATCHSPLIT_LANGUAGE" => Some("C.UTF-8".to_string()),
             "LANG" => Some("zh_CN.UTF-8".to_string()),
             _ => None,
         });
@@ -411,9 +446,25 @@ msgstr "ignored with context"
     }
 
     #[test]
+    fn invalid_language_value_falls_back_to_lang() {
+        let locales = requested_locales_with(|name| match name {
+            "LANGUAGE" => Some(":".to_string()),
+            "LANG" => Some("zh_CN.UTF-8".to_string()),
+            _ => None,
+        });
+
+        assert_eq!(locales, vec!["zh_CN".to_string(), "zh".to_string()]);
+    }
+
+    #[test]
     fn expands_locale_variants() {
         let mut locales = Vec::new();
-        push_locale_variants("zh-CN.UTF-8", &mut locales);
+        push_locale_variants("zh-cn.UTF-8", &mut locales);
         assert_eq!(locales, vec!["zh_CN".to_string(), "zh".to_string()]);
+    }
+
+    #[test]
+    fn generic_chinese_locale_uses_bundled_catalog() {
+        assert!(built_in_catalog("zh").is_some());
     }
 }

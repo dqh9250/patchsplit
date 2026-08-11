@@ -5,6 +5,8 @@ cd "$(dirname "$0")/.."
 
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
+files_from="$tmpdir/POTFILES.in"
+: > "$files_from"
 
 version="$(
     sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml |
@@ -14,7 +16,17 @@ version="$(
 while IFS= read -r file || [ -n "$file" ]; do
     case "$file" in
         '' | \#*) continue ;;
+        /* | ../* | */../* | */.. | .. | - | -*)
+            printf '%s\n' "invalid POTFILES.in entry: $file" >&2
+            exit 1
+            ;;
     esac
+
+    if [ ! -f "$file" ] || [ -L "$file" ]; then
+        printf '%s\n' "POTFILES.in entry is not a regular file: $file" >&2
+        exit 1
+    fi
+    printf '%s\n' "$file" >> "$files_from"
 
     mkdir -p "$tmpdir/$(dirname "$file")"
     awk '
@@ -74,8 +86,11 @@ while IFS= read -r file || [ -n "$file" ]; do
                     continue
                 }
                 if (block_comment) {
-                    if (ch == "*" && nxt == "/") {
-                        block_comment = 0
+                    if (ch == "/" && nxt == "*") {
+                        block_comment++
+                        i++
+                    } else if (ch == "*" && nxt == "/") {
+                        block_comment--
                         i++
                     }
                     continue
@@ -182,5 +197,5 @@ xgettext \
     --add-location=file \
     --force-po \
     --directory="$tmpdir" \
-    --files-from=po/POTFILES.in \
+    --files-from="$files_from" \
     --output=po/patchsplit.pot
